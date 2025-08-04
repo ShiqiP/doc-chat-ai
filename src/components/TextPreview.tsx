@@ -1,4 +1,4 @@
-import { useState } from "react";
+
 import { FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,13 +12,12 @@ interface TextPreviewProps {
 }
 
 export const TextPreview = ({ content, onRemove, onTextSelect }: TextPreviewProps) => {
-  const [selectedText, setSelectedText] = useState<string>("");
+
 
   const handleTextSelection = () => {
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
       const text = selection.toString().trim();
-      setSelectedText(text);
       onTextSelect?.(text);
     }
   };
@@ -68,14 +67,14 @@ export const TextPreview = ({ content, onRemove, onTextSelect }: TextPreviewProp
       </ScrollArea>
 
       {/* Selected text indicator */}
-      {selectedText && (
+      {/* {selectedText && (
         <div className="p-4 border-t border-border/40 bg-muted/30">
           <div className="text-xs text-muted-foreground mb-2">Selected text:</div>
           <div className="text-xs bg-primary/10 border border-primary/20 p-3 rounded-lg max-h-20 overflow-y-auto">
             &ldquo;{selectedText}&rdquo;
           </div>
         </div>
-      )}
+      )} */}
     </Card>
   );
 };

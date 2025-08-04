@@ -19,6 +19,13 @@ const Index = () => {
     setDocumentName(fileName || 'Pasted Text');
   };
 
+  const handleClear = () => {
+    setDocumentContent("");
+    setDocumentName("");
+    setDocumentType('text');
+    setSelectedText("");
+  };
+
   return (
     <div className="h-screen flex flex-col bg-background">
       {/* Header */}
@@ -48,15 +55,17 @@ const Index = () => {
               <UploadArea
                 onContentSubmit={handleContentSubmit}
                 onTextSelect={setSelectedText}
+                onClear={handleClear}
               />
             </div>
             <div className="h-96 border-t border-border/40 bg-card/50">
-              <ChatInterface
-                documentContent={documentContent}
-                documentName={documentName}
-                documentType={documentType}
-                selectedText={selectedText}
-              />
+                              <ChatInterface
+                  documentContent={documentContent}
+                  documentName={documentName}
+                  documentType={documentType}
+                  selectedText={selectedText}
+                  onClear={handleClear}
+                />
             </div>
           </div>
         ) : (
@@ -77,6 +86,7 @@ const Index = () => {
                   documentName={documentName}
                   documentType={documentType}
                   selectedText={selectedText}
+                  onClear={handleClear}
                 />
               </div>
             </ResizablePanel>

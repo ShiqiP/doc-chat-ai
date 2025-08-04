@@ -10,8 +10,11 @@ import { Badge } from "@/components/ui/badge";
 import 'react-pdf/dist/Page/AnnotationLayer.css';
 import 'react-pdf/dist/Page/TextLayer.css';
 // Dynamic imports for react-pdf to avoid SSR issues
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Document: React.ComponentType<any> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let Page: React.ComponentType<any> | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let pdfjs: any = null;
 
 interface FilePreviewProps {
@@ -25,7 +28,7 @@ export const FilePreview = ({ file, content, onRemove, onTextSelect }: FilePrevi
   const [numPages, setNumPages] = useState<number>(0);
   const [pageNumber, setPageNumber] = useState<number>(1);
   const [scale, setScale] = useState<number>(1.0);
-  const [selectedText, setSelectedText] = useState<string>("");
+
   const [isPdfLoaded, setIsPdfLoaded] = useState<boolean>(false);
 
   // Load react-pdf on client side
@@ -45,7 +48,7 @@ export const FilePreview = ({ file, content, onRemove, onTextSelect }: FilePrevi
       }
     };
 
-    if (file.type === 'application/pdf') {
+    if (file.name.toLowerCase().endsWith('.pdf')) {
       loadPdf();
     }
   }, [file.type]);
@@ -58,22 +61,26 @@ export const FilePreview = ({ file, content, onRemove, onTextSelect }: FilePrevi
     const selection = window.getSelection();
     if (selection && selection.toString().trim()) {
       const text = selection.toString().trim();
-      setSelectedText(text);
       onTextSelect?.(text);
     }
   }, [onTextSelect]);
 
-  const isPDF = file.type === 'application/pdf';
+  const isPDF = file.name.toLowerCase().endsWith('.pdf');
 
   const getFileIcon = () => {
-    if (file.type === 'application/pdf') return <File className="w-4 h-4 text-red-500" />;
-    if (file.type === 'text/markdown') return <FileText className="w-4 h-4 text-blue-500" />;
+    const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.pdf')) return <File className="w-4 h-4 text-red-500" />;
+    if (fileName.endsWith('.doc') || fileName.endsWith('.docx')) return <FileText className="w-4 h-4 text-blue-500" />;
+    if (fileName.endsWith('.md')) return <FileText className="w-4 h-4 text-purple-500" />;
     return <FileText className="w-4 h-4 text-green-500" />;
   };
 
   const getFileTypeLabel = () => {
-    if (file.type === 'application/pdf') return 'PDF';
-    if (file.type === 'text/markdown') return 'Markdown';
+    const fileName = file.name.toLowerCase();
+    if (fileName.endsWith('.pdf')) return 'PDF';
+    if (fileName.endsWith('.doc')) return 'DOC';
+    if (fileName.endsWith('.docx')) return 'DOCX';
+    if (fileName.endsWith('.md')) return 'Markdown';
     return 'Text';
   };
 
@@ -204,14 +211,14 @@ export const FilePreview = ({ file, content, onRemove, onTextSelect }: FilePrevi
       </div>
 
       {/* Selected text indicator */}
-      {selectedText && (
+      {/* {selectedText && (
         <div className="p-2 border-t border-border/20 bg-muted/20">
           <div className="text-xs text-muted-foreground mb-1">Selected:</div>
           <div className="text-xs bg-primary/10 border border-primary/20 p-2 max-h-16 overflow-y-auto">
             &ldquo;{selectedText}&rdquo;
           </div>
         </div>
-      )}
+      )} */}
     </Card>
   );
 };

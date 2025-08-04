@@ -6,18 +6,33 @@ import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { FilePreview } from "./FilePreview";
 import { TextPreview } from "./TextPreview";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface UploadAreaProps {
   onContentSubmit: (content: string, type: 'file' | 'text', fileName?: string) => void;
   onTextSelect?: (selectedText: string) => void;
+  onClear?: () => void;
 }
 
-export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) => {
+export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAreaProps) => {
+
+  
   const [isDragging, setIsDragging] = useState(false);
   const [textContent, setTextContent] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const [fileContent, setFileContent] = useState<string>("");
   const [hasSubmittedText, setHasSubmittedText] = useState(false);
+  const [showClearDialog, setShowClearDialog] = useState(false);
+  const [clearType, setClearType] = useState<'file' | 'text'>('file');
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -41,22 +56,28 @@ export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) =
     }
   };
 
-  const handleFileUpload = (file: File) => {
-    const allowedTypes = ['text/plain', 'application/pdf', 'text/markdown'];
+  const handleFileUpload = async (file: File) => {
+    // Check file extension
+    const fileName = file.name.toLowerCase();
+    const allowedExtensions = ['.doc', '.docx', '.pdf', '.md', '.txt'];
+    const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
     
-    if (!allowedTypes.includes(file.type)) {
+    if (!allowedExtensions.includes(fileExtension)) {
       toast({
         title: "Unsupported file type",
-        description: "Please upload a PDF, text file, or markdown file.",
+        description: "Please upload a DOC, DOCX, PDF, MD, or TXT file.",
         variant: "destructive"
       });
       return;
     }
 
-    if (file.size > 10 * 1024 * 1024) { // 10MB limit
+    // File size limits
+    const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    
+    if (file.size > MAX_FILE_SIZE) {
       toast({
         title: "File too large",
-        description: "Please upload a file smaller than 10MB.",
+        description: "Please upload a file smaller than 5MB.",
         variant: "destructive"
       });
       return;
@@ -64,18 +85,101 @@ export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) =
 
     setUploadedFile(file);
     
-    // Read file content
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const content = e.target?.result as string;
+    try {
+      let content = "";
+      
+      if (fileExtension === '.pdf') {
+        // For PDF files, we'll extract text using PDF.js
+        content = await extractPdfText(file);
+      } else if (fileExtension === '.doc' || fileExtension === '.docx') {
+        // For Word documents, we'll use mammoth.js
+        content = await extractDocText(file);
+      } else {
+        // For text files (txt, md), read as text
+        content = await readFileAsText(file);
+      }
+      
       setFileContent(content);
       onContentSubmit(content, 'file', file.name);
-    };
-    reader.readAsText(file);
+      
+      toast({
+        title: "File uploaded successfully",
+        description: `${file.name} has been processed.`,
+      });
+    } catch (error) {
+      console.error('Error processing file:', error);
+      toast({
+        title: "Error processing file",
+        description: "Failed to extract content from the file. Please try again.",
+        variant: "destructive"
+      });
+    }
+  };
 
-    toast({
-      title: "File uploaded successfully",
-      description: `${file.name} has been processed.`,
+  const extractPdfText = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const pdfjs = await import('pdfjs-dist');
+          pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
+          
+          const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+          let fullText = "";
+          
+          for (let i = 1; i <= pdf.numPages; i++) {
+            const page = await pdf.getPage(i);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map((item) => {
+                if ('str' in item) {
+                  return item.str || '';
+                }
+                return '';
+              })
+              .join(' ');
+            fullText += pageText + '\n';
+          }
+          
+          resolve(fullText.trim());
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read PDF file'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const extractDocText = async (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const arrayBuffer = e.target?.result as ArrayBuffer;
+          const mammoth = await import('mammoth');
+          
+          const result = await mammoth.extractRawText({ arrayBuffer });
+          resolve(result.value);
+        } catch (error) {
+          reject(error);
+        }
+      };
+      reader.onerror = () => reject(new Error('Failed to read Word document'));
+      reader.readAsArrayBuffer(file);
+    });
+  };
+
+  const readFileAsText = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = e.target?.result as string;
+        resolve(content);
+      };
+      reader.onerror = () => reject(new Error('Failed to read text file'));
+      reader.readAsText(file);
     });
   };
 
@@ -89,6 +193,15 @@ export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) =
       return;
     }
 
+    if (textContent.length > 10000) {
+      toast({
+        title: "Text too long",
+        description: "Please enter text shorter than 10,000 characters.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     onContentSubmit(textContent, 'text');
     setHasSubmittedText(true);
     toast({
@@ -97,17 +210,32 @@ export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) =
     });
   };
 
-  const removeFile = () => {
-    setUploadedFile(null);
-    setFileContent("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
+  const handleClearRequest = (type: 'file' | 'text') => {
+    setClearType(type);
+    setShowClearDialog(true);
+  };
+
+  const handleClearConfirm = () => {
+    if (clearType === 'file') {
+      setUploadedFile(null);
+      setFileContent("");
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
+    } else {
+      setTextContent("");
+      setHasSubmittedText(false);
     }
+    onClear?.();
+    setShowClearDialog(false);
+  };
+
+  const removeFile = () => {
+    handleClearRequest('file');
   };
 
   const removeText = () => {
-    setTextContent("");
-    setHasSubmittedText(false);
+    handleClearRequest('text');
   };
 
   return (
@@ -176,7 +304,7 @@ export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) =
                     Drag and drop files here, or click to browse
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    Supports PDF, TXT, and MD files up to 10MB
+                    Supports DOC, DOCX, PDF, MD, and TXT files up to 10MB
                   </p>
                 </div>
 
@@ -195,7 +323,7 @@ export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) =
                 ref={fileInputRef}
                 type="file"
                 className="hidden"
-                accept=".pdf,.txt,.md"
+                accept=".doc,.docx,.pdf,.md,.txt"
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) handleFileUpload(file);
@@ -239,6 +367,24 @@ export const UploadArea = ({ onContentSubmit, onTextSelect }: UploadAreaProps) =
           </Card>
         </div>
       )}
+
+      {/* Clear Confirmation Dialog */}
+      <AlertDialog open={showClearDialog} onOpenChange={setShowClearDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Content</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all content and chat records? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleClearConfirm} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              Clear All
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -4,9 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { Send, Bot, User, FileText, Sparkles, ChevronLeft, ChevronRight, Mic, MicOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
+import { summarizeContent, askQuestion, AIResponse } from "@/lib/ai";
 
 // Type declarations for speech recognition
 declare global {
@@ -28,6 +27,7 @@ interface ChatInterfaceProps {
   documentName?: string;
   documentType?: 'file' | 'text';
   selectedText?: string;
+  onClear?: () => void;
 }
 
 export const ChatInterface = ({ documentContent, documentName, documentType, selectedText }: ChatInterfaceProps) => {
@@ -36,6 +36,8 @@ export const ChatInterface = ({ documentContent, documentName, documentType, sel
   const [isLoading, setIsLoading] = useState(false);
   const [suggestedQuestions, setSuggestedQuestions] = useState<string[]>([]);
   const [isListening, setIsListening] = useState(false);
+  const [currentContent, setCurrentContent] = useState<string>("");
+  const [selectedTextRef, setSelectedTextRef] = useState<string>("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const questionsScrollRef = useRef<HTMLDivElement>(null);
@@ -72,58 +74,85 @@ export const ChatInterface = ({ documentContent, documentName, documentType, sel
     };
   }, []);
 
-  const generateSuggestedQuestions = () => {
-    const questions = [
-      "What are the main topics covered?",
-      "Summarize the key points",
-      "What are the important conclusions?",
-      "Explain the main concepts"
-    ];
-    setSuggestedQuestions(questions);
-  };
-
   const generateSummary = async () => {
+    if (!documentContent) return;
+    
     setIsLoading(true);
     
-    // Simulate AI processing time
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    const summaryMessage: Message = {
-      id: Date.now().toString(),
-      content: `I've analyzed your ${documentType === 'file' ? 'document' : 'text'}${documentName ? ` "${documentName}"` : ''}. Here's what I found:
+    try {
+      const aiResponse: AIResponse = await summarizeContent(documentContent);
+      
+      if (aiResponse.error) {
+        const errorMessage: Message = {
+          id: Date.now().toString(),
+          content: `I encountered an error while analyzing your ${documentType === 'file' ? 'document' : 'text'}${documentName ? ` "${documentName}"` : ''}. ${aiResponse.error}`,
+          type: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages([errorMessage]);
+      } else {
+        const summaryMessage: Message = {
+          id: Date.now().toString(),
+          content: `I've analyzed your ${documentType === 'file' ? 'document' : 'text'}${documentName ? ` "${documentName}"` : ''}. Here's what I found:
 
-**Key Insights:**
-• This document contains valuable information that I can help you explore
-• I can answer questions about specific details, concepts, or themes
-• I can help clarify complex sections or provide explanations
-• I can also help you find specific information quickly
+**Summary:**
+${aiResponse.summary}
 
-**What would you like to learn?** You can ask me:
-- "What are the main topics covered?"
-- "Summarize the key points"
-- "What are the important conclusions?"
-- "Explain the main concepts"
-
-Or ask any specific question about the content!`,
-      type: 'assistant',
-      timestamp: new Date()
-    };
-    
-    setMessages([summaryMessage]);
-    setIsLoading(false);
+**What would you like to learn?** You can ask me any of the suggested questions below, or ask your own specific question about the content!`,
+          type: 'assistant',
+          timestamp: new Date()
+        };
+        
+        setMessages([summaryMessage]);
+        
+        if (aiResponse.questions && aiResponse.questions.length > 0) {
+          setSuggestedQuestions(aiResponse.questions);
+        }
+      }
+    } catch (error) {
+      console.error('Error generating summary:', error);
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: `I apologize, but I encountered an error while analyzing your content. Please try again.`,
+        type: 'assistant',
+        timestamp: new Date()
+      };
+      setMessages([errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Generate summary when document is uploaded
   useEffect(() => {
-    if (documentContent && messages.length === 0) {
+    if (documentContent) {
+      setCurrentContent(documentContent);
+      // Always generate summary when new content is provided
       generateSummary();
-      generateSuggestedQuestions();
     }
   }, [documentContent]);
 
+  // Reset chat state when document content is cleared
+  useEffect(() => {
+    if (!documentContent) {
+      setMessages([]);
+      setInputValue("");
+      setSuggestedQuestions([]);
+      setCurrentContent("");
+      setSelectedTextRef("");
+    }
+  }, [documentContent]);
+
+  // Update selected text reference when selectedText prop changes
+  useEffect(() => {
+    if (selectedText && selectedText.trim()) {
+      setSelectedTextRef(selectedText.trim());
+    }
+  }, [selectedText]);
+
   const sendMessage = async (question?: string) => {
     const messageText = question || inputValue.trim();
-    if (!messageText) return;
+    if (!messageText || !currentContent) return;
 
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -136,19 +165,44 @@ Or ask any specific question about the content!`,
     setInputValue("");
     setIsLoading(true);
 
-    // Simulate AI response
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    const aiResponse = generateAIResponse(messageText);
-    const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(),
-      content: aiResponse,
-      type: 'assistant',
-      timestamp: new Date()
-    };
+    try {
+      let contextContent = currentContent;
+      // If there's selected text, use it as the primary context
+      if (selectedTextRef) {
+        contextContent = selectedTextRef;
+      }
 
-    setMessages(prev => [...prev, assistantMessage]);
-    setIsLoading(false);
+      const aiResponse: AIResponse = await askQuestion(contextContent, messageText);
+      
+      if (aiResponse.error) {
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: `I encountered an error while processing your question: ${aiResponse.error}`,
+          type: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, errorMessage]);
+      } else {
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          content: aiResponse.answer || 'I apologize, but I couldn\'t generate a response. Please try again.',
+          type: 'assistant',
+          timestamp: new Date()
+        };
+        setMessages(prev => [...prev, assistantMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: 'I apologize, but I encountered an error while processing your question. Please try again.',
+        type: 'assistant',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const toggleSpeechRecognition = () => {
@@ -164,28 +218,25 @@ Or ask any specific question about the content!`,
 
   const scrollQuestions = (direction: 'left' | 'right') => {
     if (questionsScrollRef.current) {
-      const scrollAmount = direction === 'left' ? -200 : 200;
-      questionsScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      const scrollViewport = questionsScrollRef.current.querySelector('[data-radix-scroll-area-viewport]');
+      if (scrollViewport) {
+        const scrollAmount = direction === 'left' ? -200 : 200;
+        scrollViewport.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+      }
     }
   };
 
-  const generateAIResponse = (question: string): string => {
-    const responses = [
-      "Based on the document content, I can see that this topic is well-covered. The key points include...",
-      "This is an interesting question about the material. From what I've analyzed, the main concepts are...",
-      "Great question! The document addresses this topic in several ways. Here's what I found...",
-      "I can help you understand this better. The content shows that...",
-      "This is a complex topic that the document explores in detail. Let me break it down for you..."
-    ];
-    
-    return responses[Math.floor(Math.random() * responses.length)];
-  };
+
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
+  };
+
+  const clearSelectedTextRef = () => {
+    setSelectedTextRef("");
   };
 
   return (
@@ -320,6 +371,33 @@ Or ask any specific question about the content!`,
         </div>
       )}
 
+      {/* Selected Text Reference */}
+      {selectedTextRef && (
+        <div className="p-4 border-t border-border/40 bg-primary/5">
+          <div className="flex items-start justify-between gap-3">
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-4 h-4 bg-primary/20 rounded-full flex items-center justify-center">
+                  <FileText className="w-3 h-3 text-primary" />
+                </div>
+                <span className="text-xs font-medium text-primary">Selected Text Reference</span>
+              </div>
+              <div className="text-sm text-muted-foreground bg-background/50 rounded-lg p-3 border border-border/30">
+                &ldquo;{selectedTextRef}&rdquo;
+              </div>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearSelectedTextRef}
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+            >
+              ×
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="p-4 border-t border-border/40 bg-card/30">
         <div className="flex gap-2">
@@ -329,7 +407,7 @@ Or ask any specific question about the content!`,
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Ask a question about your document..."
+              placeholder={selectedTextRef ? "Ask a question about the selected text..." : "Ask a question about your document..."}
               className="pr-10 border-border/50 focus:border-primary/50"
             />
             <Button
