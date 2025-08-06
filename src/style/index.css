@@ -140,6 +140,31 @@ All colors MUST be HSL.
   display: none;
 }
 
+/* PDF Viewer Styles */
+
+/* Horizontal scroll bar styling for PDF viewer */
+.pdf-scroll-container {
+  scrollbar-width: thin;
+  scrollbar-color: hsl(var(--border)) transparent;
+}
+
+.pdf-scroll-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.pdf-scroll-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.pdf-scroll-container::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 4px;
+}
+
+.pdf-scroll-container::-webkit-scrollbar-thumb:hover {
+  background-color: hsl(var(--muted-foreground));
+}
+
 @theme inline {
   --color-background: hsl(var(--background));
   --color-foreground: hsl(var(--foreground));

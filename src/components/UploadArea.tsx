@@ -1,9 +1,12 @@
+'use client'
+
 import { useState, useRef } from "react";
-import { Upload, File, FileText, Sparkles } from "lucide-react";
+import { Upload, File, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { FilePreview } from "./FilePreview";
 import { TextPreview } from "./TextPreview";
 import {
@@ -25,7 +28,7 @@ interface UploadAreaProps {
 
 export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAreaProps) => {
 
-  
+
   const [isDragging, setIsDragging] = useState(false);
   const [textContent, setTextContent] = useState("");
   const [uploadedFile, setUploadedFile] = useState<File | null>(null);
@@ -49,7 +52,7 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    
+
     const files = Array.from(e.dataTransfer.files);
     if (files.length > 0) {
       handleFileUpload(files[0]);
@@ -61,7 +64,7 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
     const fileName = file.name.toLowerCase();
     const allowedExtensions = ['.doc', '.docx', '.pdf', '.md', '.txt'];
     const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
-    
+
     if (!allowedExtensions.includes(fileExtension)) {
       toast({
         title: "Unsupported file type",
@@ -73,21 +76,22 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
 
     // File size limits
     const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+    const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
     
     if (file.size > MAX_FILE_SIZE) {
       toast({
         title: "File too large",
-        description: "Please upload a file smaller than 5MB.",
+        description: `File size (${fileSizeMB}MB) exceeds the 5MB limit. Please choose a smaller file.`,
         variant: "destructive"
       });
       return;
     }
 
     setUploadedFile(file);
-    
+
     try {
       let content = "";
-      
+
       if (fileExtension === '.pdf') {
         // For PDF files, we'll extract text using PDF.js
         content = await extractPdfText(file);
@@ -98,13 +102,13 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
         // For text files (txt, md), read as text
         content = await readFileAsText(file);
       }
-      
+
       setFileContent(content);
       onContentSubmit(content, 'file', file.name);
-      
+
       toast({
         title: "File uploaded successfully",
-        description: `${file.name} has been processed.`,
+        description: `${file.name} (${fileSizeMB}MB) has been processed.`,
       });
     } catch (error) {
       console.error('Error processing file:', error);
@@ -124,10 +128,10 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
           const arrayBuffer = e.target?.result as ArrayBuffer;
           const pdfjs = await import('pdfjs-dist');
           pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.mjs`;
-          
+
           const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
           let fullText = "";
-          
+
           for (let i = 1; i <= pdf.numPages; i++) {
             const page = await pdf.getPage(i);
             const textContent = await page.getTextContent();
@@ -141,7 +145,7 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
               .join(' ');
             fullText += pageText + '\n';
           }
-          
+
           resolve(fullText.trim());
         } catch (error) {
           reject(error);
@@ -159,7 +163,7 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
         try {
           const arrayBuffer = e.target?.result as ArrayBuffer;
           const mammoth = await import('mammoth');
-          
+
           const result = await mammoth.extractRawText({ arrayBuffer });
           resolve(result.value);
         } catch (error) {
@@ -193,10 +197,14 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
       return;
     }
 
-    if (textContent.length > 10000) {
+    const MAX_TEXT_SIZE = 10000; // 10KB limit
+    const currentSize = textContent.length;
+    
+    if (currentSize > MAX_TEXT_SIZE) {
+      const sizeKB = (currentSize / 1024).toFixed(2);
       toast({
         title: "Text too long",
-        description: "Please enter text shorter than 10,000 characters.",
+        description: `Text size (${sizeKB}KB, ${currentSize} characters) exceeds the 10KB limit. Please enter shorter text.`,
         variant: "destructive"
       });
       return;
@@ -204,9 +212,10 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
 
     onContentSubmit(textContent, 'text');
     setHasSubmittedText(true);
+    const sizeKB = (currentSize / 1024).toFixed(2);
     toast({
       title: "Text submitted successfully",
-      description: "Your text has been processed.",
+      description: `Your text (${sizeKB}KB, ${currentSize} characters) has been processed.`,
     });
   };
 
@@ -243,9 +252,9 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
       {/* Show File Preview if file is uploaded */}
       {uploadedFile && fileContent && (
         <div className="flex-1 min-h-0">
-          <FilePreview 
-            file={uploadedFile} 
-            content={fileContent} 
+          <FilePreview
+            file={uploadedFile}
+            content={fileContent}
             onRemove={removeFile}
             onTextSelect={onTextSelect}
           />
@@ -255,8 +264,8 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
       {/* Show Text Preview if text is submitted */}
       {hasSubmittedText && textContent && !uploadedFile && (
         <div className="flex-1 min-h-0">
-          <TextPreview 
-            content={textContent} 
+          <TextPreview
+            content={textContent}
             onRemove={removeText}
             onTextSelect={onTextSelect}
           />
@@ -265,9 +274,10 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
 
       {/* Show upload area if no content is uploaded */}
       {!uploadedFile && !hasSubmittedText && (
-        <div className="h-full flex flex-col space-y-6 p-4">
-          {/* Welcome Section */}
-          {/* <div className="text-center space-y-4">
+        <ScrollArea className="h-full">
+          <div className="h-full flex flex-col space-y-6 p-4">
+            {/* Welcome Section */}
+            {/* <div className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
               <Sparkles className="w-8 h-8 text-primary" />
             </div>
@@ -279,93 +289,109 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
             </div>
           </div> */}
 
-          {/* File Upload Area */}
-          <Card className="relative overflow-hidden border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors">
-            <div
-              className={`
+            {/* File Upload Area */}
+            <Card className="relative overflow-hidden border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors">
+              <div
+                className={`
                 p-8 transition-all duration-300 rounded-lg
-                ${isDragging 
-                  ? 'border-primary bg-primary/5' 
-                  : 'hover:bg-muted/30'
-                }
+                ${isDragging
+                    ? 'border-primary bg-primary/5'
+                    : 'hover:bg-muted/30'
+                  }
               `}
-              onDragOver={handleDragOver}
-              onDragLeave={handleDragLeave}
-              onDrop={handleDrop}
-            >
-              <div className="text-center space-y-4">
-                <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
-                  <Upload className="w-6 h-6 text-primary" />
-                </div>
-                
-                <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Upload a document</h3>
-                  <p className="text-muted-foreground text-sm">
-                    Drag and drop files here, or click to browse
-                  </p>
-                  <p className="text-xs text-muted-foreground">
-                    Supports DOC, DOCX, PDF, MD, and TXT files up to 10MB
-                  </p>
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+              >
+                <div className="text-center space-y-4">
+                  <div className="mx-auto w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                    <Upload className="w-6 h-6 text-primary" />
+                  </div>
+
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-medium">Upload a document</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Drag and drop files here, or click to browse
+                    </p>
+                    <div className="text-xs text-muted-foreground space-y-1">
+                      <p>Supports DOC, DOCX, PDF, MD, and TXT files</p>
+                      <p className="text-amber-600 font-medium">Maximum file size: 5MB</p>
+                    </div>
+                  </div>
+
+                  <Button
+                    onClick={() => fileInputRef.current?.click()}
+                    variant="outline"
+                    size="sm"
+                    className="border-primary/20 hover:border-primary/40"
+                  >
+                    <File className="w-4 h-4 mr-2" />
+                    Choose File
+                  </Button>
                 </div>
 
-                <Button
-                  onClick={() => fileInputRef.current?.click()}
-                  variant="outline"
-                  size="sm"
-                  className="border-primary/20 hover:border-primary/40"
-                >
-                  <File className="w-4 h-4 mr-2" />
-                  Choose File
-                </Button>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  accept=".doc,.docx,.pdf,.md,.txt"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleFileUpload(file);
+                  }}
+                />
+              </div>
+            </Card>
+
+            {/* Divider */}
+            <div className="flex items-center">
+              <div className="flex-1 border-t border-border/40"></div>
+              <span className="px-4 text-xs text-muted-foreground">or</span>
+              <div className="flex-1 border-t border-border/40"></div>
+            </div>
+
+            {/* Text Input Area */}
+            <Card className="p-6 space-y-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium">Paste text directly</h3>
+                <p className="text-muted-foreground text-sm">
+                  Enter any text content you&apos;d like to analyze and learn from
+                </p>
+                <div className="text-xs text-muted-foreground space-y-1">
+                  <p className="text-amber-600 font-medium">Maximum text size: 10KB (10,000 characters)</p>
+                  <p className={`font-medium ${
+                    textContent.length > 10000 
+                      ? 'text-red-600' 
+                      : textContent.length > 8000 
+                        ? 'text-amber-600' 
+                        : 'text-green-600'
+                  }`}>
+                    Current: {textContent.length} characters
+                    {textContent.length > 10000 && ' (EXCEEDED LIMIT)'}
+                    {textContent.length > 8000 && textContent.length <= 10000 && ' (APPROACHING LIMIT)'}
+                  </p>
+                </div>
               </div>
 
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                accept=".doc,.docx,.pdf,.md,.txt"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleFileUpload(file);
-                }}
+              <Textarea
+                placeholder="Paste your text content here..."
+                value={textContent}
+                onChange={(e) => setTextContent(e.target.value)}
+                className="min-h-[120px] resize-none border-border/50 focus:border-primary/50"
               />
-            </div>
-          </Card>
 
-          {/* Divider */}
-          <div className="flex items-center">
-            <div className="flex-1 border-t border-border/40"></div>
-            <span className="px-4 text-xs text-muted-foreground">or</span>
-            <div className="flex-1 border-t border-border/40"></div>
+              <Button
+                onClick={handleTextSubmit}
+                className="w-full bg-primary hover:bg-primary/90"
+                disabled={!textContent.trim() || textContent.length > 10000}
+                size="lg"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {textContent.length > 10000 ? 'Text Too Long' : 'Start Learning'}
+              </Button>
+            </Card>
           </div>
-
-          {/* Text Input Area */}
-          <Card className="p-6 space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-lg font-medium">Paste text directly</h3>
-              <p className="text-muted-foreground text-sm">
-                Enter any text content you&apos;d like to analyze and learn from
-              </p>
-            </div>
-            
-            <Textarea
-              placeholder="Paste your text content here..."
-              value={textContent}
-              onChange={(e) => setTextContent(e.target.value)}
-              className="min-h-[120px] resize-none border-border/50 focus:border-primary/50"
-            />
-            
-            <Button
-              onClick={handleTextSubmit}
-              className="w-full bg-primary hover:bg-primary/90"
-              disabled={!textContent.trim()}
-              size="lg"
-            >
-              <FileText className="w-4 h-4 mr-2" />
-              Start Learning
-            </Button>
-          </Card>
-        </div>
+        </ScrollArea>
       )}
 
       {/* Clear Confirmation Dialog */}
