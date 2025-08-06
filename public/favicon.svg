@@ -1,0 +1,16 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3B82F6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8B5CF6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Background circle -->
+  <circle cx="16" cy="16" r="15" fill="url(#gradient)"/>
+  
+  <!-- Zap icon scaled and centered -->
+  <g transform="translate(9, 7) scale(0.9)">
+    <path d="M9.663 17h4.673L8.5 1 1 12h4.837l3.826 5z" fill="white" stroke="none"/>
+  </g>
+</svg>

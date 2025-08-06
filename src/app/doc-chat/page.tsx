@@ -1,12 +1,11 @@
 'use client'
 import { useState } from "react";
 import Link from "next/link";
-import { Sparkles, ArrowLeft, FileText } from "lucide-react";
+import { ArrowLeft, FileText } from "lucide-react";
 import { UploadArea } from "@/components/UploadArea";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const [documentContent, setDocumentContent] = useState<string>("");
@@ -81,6 +80,7 @@ const Index = () => {
                 <UploadArea
                   onContentSubmit={handleContentSubmit}
                   onTextSelect={setSelectedText}
+                  onClear={handleClear}
                 />
               </div>
             </ResizablePanel>

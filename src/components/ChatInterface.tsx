@@ -89,12 +89,12 @@ export const ChatInterface = ({ documentContent, documentName, documentType, sel
 
   const generateSummary = async () => {
     if (!documentContent) return;
-    
+
     setIsLoading(true);
-    
+
     try {
       const aiResponse: AIResponse = await summarizeContent(documentContent);
-      
+
       if (aiResponse.error) {
         const errorMessage: Message = {
           id: Date.now().toString(),
@@ -115,9 +115,9 @@ ${aiResponse.summary}
           type: 'assistant',
           timestamp: new Date()
         };
-        
+
         setMessages([summaryMessage]);
-        
+
         if (aiResponse.questions && aiResponse.questions.length > 0) {
           setSuggestedQuestions(aiResponse.questions);
         }
@@ -186,7 +186,7 @@ ${aiResponse.summary}
       }
 
       const aiResponse: AIResponse = await askQuestion(contextContent, messageText);
-      
+
       if (aiResponse.error) {
         const errorMessage: Message = {
           id: (Date.now() + 1).toString(),
@@ -220,7 +220,7 @@ ${aiResponse.summary}
 
   const toggleSpeechRecognition = () => {
     if (!recognitionRef.current) return;
-    
+
     if (isListening) {
       recognitionRef.current.stop();
     } else {
@@ -288,27 +288,24 @@ ${aiResponse.summary}
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex gap-2 sm:gap-3 ${
-                  message.type === 'user' ? 'justify-end' : 'justify-start'
-                }`}
+                className={`flex gap-2 sm:gap-3 ${message.type === 'user' ? 'justify-end' : 'justify-start'
+                  }`}
               >
                 {message.type === 'assistant' && (
                   <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
                     <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                   </div>
                 )}
-                
+
                 <div
-                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
-                    message.type === 'user'
+                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${message.type === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/50 text-foreground'
-                  }`}
+                    }`}
                 >
                   <div className="text-xs sm:text-sm whitespace-pre-wrap break-words">{message.content}</div>
-                  <div className={`text-xs mt-1 sm:mt-2 ${
-                    message.type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
-                  }`}>
+                  <div className={`text-xs mt-1 sm:mt-2 ${message.type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
+                    }`}>
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                   </div>
                 </div>
@@ -335,7 +332,7 @@ ${aiResponse.summary}
                 </div>
               </div>
             )}
-            
+
             {/* Invisible element for auto-scroll */}
             <div ref={messagesEndRef} />
           </div>
@@ -366,7 +363,7 @@ ${aiResponse.summary}
               </Button>
             </div>
           </div>
-          
+
           <ScrollArea ref={questionsScrollRef} className="scrollbar-hide">
             <div className="flex gap-2 pb-2">
               {suggestedQuestions.map((question, index) => (

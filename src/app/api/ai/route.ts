@@ -61,7 +61,7 @@ export async function POST(request: NextRequest) {
     if (type === 'summarize') {
       systemPrompt = `You are a helpful AI assistant that summarizes documents and generates relevant questions. 
       Provide a concise summary (under 300 words) and generate 3-5 relevant questions that users might ask about this content.
-      Format your response as JSON with "summary" and "questions" fields.`;
+      Format your response as JSON with "summary" and "questions" fields. If the content contains meaningless text, return summary shows that the content is meaningless and an empty array for questions.`;
       
       prompt = `Please analyze the following content and provide:
       1. A concise summary (under 300 words)
