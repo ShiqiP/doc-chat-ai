@@ -162,39 +162,41 @@ export const FilePreview = ({ file, content, onRemove, onTextSelect }: FilePrevi
               </div>
             )}
 
-                         {/* PDF Document */}
-             <ScrollArea className="flex-1">
-               <div
-                 className="flex justify-center p-4 select-text"
-                 onMouseUp={handleTextSelection}
-                 style={{ userSelect: 'text' }}
-               >
-                 {Document && Page && isPdfLoaded ? (
-                   <Document
-                     file={file}
-                     onLoadSuccess={onDocumentLoadSuccess}
-                     className="border border-border/30 shadow-sm"
-                   >
-                     <Page
-                       pageNumber={pageNumber}
-                       scale={scale}
-                       renderTextLayer={true}
-                       renderAnnotationLayer={false}
-                       canvasBackground="transparent"
-                     />
-                   </Document>
-                 ) : (
-                   <div className="flex items-center justify-center h-48 text-muted-foreground">
-                     <div className="text-center space-y-2">
-                       <div className="w-8 h-8 mx-auto bg-muted/50 rounded-lg flex items-center justify-center">
-                         <FileText className="w-4 h-4" />
-                       </div>
-                       <p className="text-sm">Loading PDF viewer...</p>
-                     </div>
-                   </div>
-                 )}
-               </div>
-             </ScrollArea>
+            {/* PDF Document */}
+            <ScrollArea className="flex-1 bg-white">
+              <div
+                className="flex justify-center p-4 select-text bg-white"
+                onMouseUp={handleTextSelection}
+                style={{ userSelect: 'text' }}
+              >
+                {Document && Page && isPdfLoaded ? (
+                  <Document
+                    file={file}
+                    onLoadSuccess={onDocumentLoadSuccess}
+                    className="border border-border/30 shadow-sm bg-white"
+                  >
+                    <Page
+                      pageNumber={pageNumber}
+                      scale={scale}
+                      renderTextLayer={true}
+                      renderAnnotationLayer={false}
+                      canvasBackground="white"
+                      className="bg-white"
+                      style={{ backgroundColor: 'white' }}
+                    />
+                  </Document>
+                ) : (
+                  <div className="flex items-center justify-center h-48 text-muted-foreground">
+                    <div className="text-center space-y-2">
+                      <div className="w-8 h-8 mx-auto bg-muted/50 rounded-lg flex items-center justify-center">
+                        <FileText className="w-4 h-4" />
+                      </div>
+                      <p className="text-sm">Loading PDF viewer...</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </div>
         ) : (
           // Text content viewer

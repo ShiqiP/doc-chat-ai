@@ -36,14 +36,15 @@ const Index = () => {
               <Brain className="w-4 h-4 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="text-lg font-semibold text-foreground">DocChat AI</h1>
-              <p className="text-xs text-muted-foreground">AI-powered document analysis</p>
+              <h1 className="text-lg font-semibold text-foreground">Shiqi AI Kit</h1>
+              <p className="text-xs text-muted-foreground flex items-center gap-1">
+                <Sparkles className="w-3 h-3" />
+                AI-powered</p>
             </div>
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Sparkles className="w-3 h-3" />
-            <span>Powered by AI</span>
-          </div>
+            {/* <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span>Author Shiqi</span>
+            </div> */}
         </div>
       </header>
 
@@ -59,19 +60,19 @@ const Index = () => {
               />
             </div>
             <div className="h-96 border-t border-border/40 bg-card/50">
-                              <ChatInterface
-                  documentContent={documentContent}
-                  documentName={documentName}
-                  documentType={documentType}
-                  selectedText={selectedText}
-                  onClear={handleClear}
-                />
+              <ChatInterface
+                documentContent={documentContent}
+                documentName={documentName}
+                documentType={documentType}
+                selectedText={selectedText}
+                onClear={handleClear}
+              />
             </div>
           </div>
         ) : (
           <ResizablePanelGroup direction="horizontal" className="h-full">
             <ResizablePanel defaultSize={60} minSize={40} maxSize={75}>
-              <div className="h-full p-6">
+              <div className="h-full">
                 <UploadArea
                   onContentSubmit={handleContentSubmit}
                   onTextSelect={setSelectedText}

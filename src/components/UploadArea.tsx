@@ -265,9 +265,9 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
 
       {/* Show upload area if no content is uploaded */}
       {!uploadedFile && !hasSubmittedText && (
-        <div className="h-full flex flex-col space-y-6">
+        <div className="h-full flex flex-col space-y-6 p-4">
           {/* Welcome Section */}
-          <div className="text-center space-y-4">
+          {/* <div className="text-center space-y-4">
             <div className="w-16 h-16 mx-auto bg-gradient-to-br from-primary/10 to-primary/20 rounded-2xl flex items-center justify-center">
               <Sparkles className="w-8 h-8 text-primary" />
             </div>
@@ -277,7 +277,7 @@ export const UploadArea = ({ onContentSubmit, onTextSelect, onClear }: UploadAre
                 Upload a document or paste text to start an AI-powered conversation and extract insights.
               </p>
             </div>
-          </div>
+          </div> */}
 
           {/* File Upload Area */}
           <Card className="relative overflow-hidden border-2 border-dashed border-border/50 hover:border-primary/50 transition-colors">

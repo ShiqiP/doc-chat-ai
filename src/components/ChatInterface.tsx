@@ -39,9 +39,22 @@ export const ChatInterface = ({ documentContent, documentName, documentType, sel
   const [currentContent, setCurrentContent] = useState<string>("");
   const [selectedTextRef, setSelectedTextRef] = useState<string>("");
   const scrollAreaRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const questionsScrollRef = useRef<HTMLDivElement>(null);
   const recognitionRef = useRef<any>(null);
+
+  // Auto-scroll to bottom when new messages are added
+  const scrollToBottom = () => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
 
   // Initialize speech recognition
   useEffect(() => {
@@ -226,8 +239,6 @@ ${aiResponse.summary}
     }
   };
 
-
-
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -242,14 +253,14 @@ ${aiResponse.summary}
   return (
     <div className="h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b border-border/40 bg-card/50">
+      <div className="p-3 sm:p-4 border-b border-border/40 bg-card/50 flex-shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
             <Bot className="w-4 h-4 text-primary" />
           </div>
-          <div>
-            <h3 className="font-medium text-foreground">AI Assistant</h3>
-            <p className="text-xs text-muted-foreground">
+          <div className="min-w-0 flex-1">
+            <h3 className="font-medium text-foreground text-sm sm:text-base">AI Assistant</h3>
+            <p className="text-xs text-muted-foreground truncate">
               {documentContent ? 'Ready to help you learn' : 'Upload a document to start'}
             </p>
           </div>
@@ -257,17 +268,17 @@ ${aiResponse.summary}
       </div>
 
       {/* Messages */}
-      <div className="flex-1 min-h-0">
-        <ScrollArea className="h-full p-4" ref={scrollAreaRef}>
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ScrollArea className="h-full p-3 sm:p-4" ref={scrollAreaRef}>
           <div className="space-y-4">
             {messages.length === 0 && !documentContent && (
-              <div className="text-center py-12 space-y-4">
+              <div className="text-center py-8 sm:py-12 space-y-4">
                 <div className="w-12 h-12 mx-auto bg-muted/50 rounded-xl flex items-center justify-center">
                   <Sparkles className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <div className="space-y-2">
-                  <h3 className="font-medium text-foreground">Ready to learn</h3>
-                  <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                  <h3 className="font-medium text-foreground text-sm sm:text-base">Ready to learn</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground max-w-sm mx-auto">
                     Upload a document or paste text to start an AI-powered conversation and extract insights.
                   </p>
                 </div>
@@ -277,25 +288,25 @@ ${aiResponse.summary}
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex gap-3 ${
+                className={`flex gap-2 sm:gap-3 ${
                   message.type === 'user' ? 'justify-end' : 'justify-start'
                 }`}
               >
                 {message.type === 'assistant' && (
-                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Bot className="w-4 h-4 text-primary" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                   </div>
                 )}
                 
                 <div
-                  className={`max-w-[80%] rounded-2xl px-4 py-3 ${
+                  className={`max-w-[85%] sm:max-w-[80%] rounded-2xl px-3 py-2 sm:px-4 sm:py-3 ${
                     message.type === 'user'
                       ? 'bg-primary text-primary-foreground'
                       : 'bg-muted/50 text-foreground'
                   }`}
                 >
-                  <div className="text-sm whitespace-pre-wrap">{message.content}</div>
-                  <div className={`text-xs mt-2 ${
+                  <div className="text-xs sm:text-sm whitespace-pre-wrap break-words">{message.content}</div>
+                  <div className={`text-xs mt-1 sm:mt-2 ${
                     message.type === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'
                   }`}>
                     {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -303,19 +314,19 @@ ${aiResponse.summary}
                 </div>
 
                 {message.type === 'user' && (
-                  <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <User className="w-4 h-4 text-primary" />
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <User className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                   </div>
                 )}
               </div>
             ))}
 
             {isLoading && (
-              <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
-                  <Bot className="w-4 h-4 text-primary" />
+              <div className="flex gap-2 sm:gap-3 justify-start">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-3 h-3 sm:w-4 sm:h-4 text-primary" />
                 </div>
-                <div className="bg-muted/50 rounded-2xl px-4 py-3">
+                <div className="bg-muted/50 rounded-2xl px-3 py-2 sm:px-4 sm:py-3">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce"></div>
                     <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
@@ -324,15 +335,18 @@ ${aiResponse.summary}
                 </div>
               </div>
             )}
+            
+            {/* Invisible element for auto-scroll */}
+            <div ref={messagesEndRef} />
           </div>
         </ScrollArea>
       </div>
 
       {/* Suggested Questions */}
       {suggestedQuestions.length > 0 && (
-        <div className="p-4 border-t border-border/40">
+        <div className="p-3 sm:p-4 border-t border-border/40 flex-shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium text-foreground">Suggested questions</h4>
+            <h4 className="text-xs sm:text-sm font-medium text-foreground">Suggested questions</h4>
             <div className="flex gap-1">
               <Button
                 variant="ghost"
@@ -361,7 +375,7 @@ ${aiResponse.summary}
                   variant="outline"
                   size="sm"
                   onClick={() => sendMessage(question)}
-                  className="whitespace-nowrap border-border/50 hover:border-primary/50"
+                  className="whitespace-nowrap border-border/50 hover:border-primary/50 text-xs"
                 >
                   {question}
                 </Button>
@@ -373,16 +387,16 @@ ${aiResponse.summary}
 
       {/* Selected Text Reference */}
       {selectedTextRef && (
-        <div className="p-4 border-t border-border/40 bg-primary/5">
+        <div className="p-3 sm:p-4 border-t border-border/40 bg-primary/5 flex-shrink-0">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-2">
-                <div className="w-4 h-4 bg-primary/20 rounded-full flex items-center justify-center">
+                <div className="w-4 h-4 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
                   <FileText className="w-3 h-3 text-primary" />
                 </div>
                 <span className="text-xs font-medium text-primary">Selected Text Reference</span>
               </div>
-              <div className="text-sm text-muted-foreground bg-background/50 rounded-lg p-3 border border-border/30">
+              <div className="text-xs sm:text-sm text-muted-foreground bg-background/50 rounded-lg p-2 sm:p-3 border border-border/30 break-words">
                 &ldquo;{selectedTextRef}&rdquo;
               </div>
             </div>
@@ -390,7 +404,7 @@ ${aiResponse.summary}
               variant="ghost"
               size="sm"
               onClick={clearSelectedTextRef}
-              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground"
+              className="h-6 w-6 p-0 text-muted-foreground hover:text-foreground flex-shrink-0"
             >
               ×
             </Button>
@@ -399,7 +413,7 @@ ${aiResponse.summary}
       )}
 
       {/* Input Area */}
-      <div className="p-4 border-t border-border/40 bg-card/30">
+      <div className="p-3 sm:p-4 border-t border-border/40 bg-card/30 flex-shrink-0">
         <div className="flex gap-2">
           <div className="flex-1 relative">
             <Input
@@ -408,7 +422,7 @@ ${aiResponse.summary}
               onChange={(e) => setInputValue(e.target.value)}
               onKeyPress={handleKeyPress}
               placeholder={selectedTextRef ? "Ask a question about the selected text..." : "Ask a question about your document..."}
-              className="pr-10 border-border/50 focus:border-primary/50"
+              className="pr-10 border-border/50 focus:border-primary/50 text-xs sm:text-sm"
             />
             <Button
               variant="ghost"
@@ -427,7 +441,7 @@ ${aiResponse.summary}
             onClick={() => sendMessage()}
             disabled={!inputValue.trim() || isLoading}
             size="sm"
-            className="bg-primary hover:bg-primary/90"
+            className="bg-primary hover:bg-primary/90 flex-shrink-0"
           >
             <Send className="w-4 h-4" />
           </Button>
