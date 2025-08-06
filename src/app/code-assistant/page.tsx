@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Brain, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Footer } from "@/components/Footer";
 
 export default function CodeAssistantPage() {
   return (
@@ -58,6 +59,8 @@ export default function CodeAssistantPage() {
           </Card>
         </div>
       </div>
+
+      <Footer variant="centered" />
     </div>
   );
 }

@@ -18,6 +18,17 @@ A modern document analysis and chat application built with Next.js, React, and O
 - npm or yarn
 - OpenAI API key
 
+### Environment Setup
+
+1. Copy the environment example file:
+```bash
+cp env.example .env.local
+```
+
+2. Update the environment variables in `.env.local`:
+- `NEXT_PUBLIC_APP_NAME`: Application name (default: "Shiqi AI Tools")
+- `OPENAI_API_KEY`: Your OpenAI API key for AI functionality
+
 ### Installation
 
 1. Clone the repository:

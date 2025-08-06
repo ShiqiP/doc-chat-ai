@@ -4,6 +4,7 @@ import Link from "next/link";
 import { MessageSquare, ArrowLeft, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Footer } from "@/components/Footer";
 
 export default function ChatBotPage() {
   return (
@@ -58,6 +59,8 @@ export default function ChatBotPage() {
           </Card>
         </div>
       </div>
+
+      <Footer variant="centered" />
     </div>
   );
 }

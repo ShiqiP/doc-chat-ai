@@ -5,6 +5,7 @@ import { Brain, FileText, MessageSquare, Sparkles, ArrowRight, Zap } from "lucid
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Footer } from "@/components/Footer";
 
 interface AIKit {
   id: string;
@@ -16,6 +17,8 @@ interface AIKit {
   features: string[];
   color: string;
 }
+
+const appName = process.env.NEXT_PUBLIC_APP_NAME || "Shiqi AI Tools";
 
 const aiKits: AIKit[] = [
   {
@@ -75,7 +78,7 @@ export default function HomePage() {
                 <Zap className="w-6 h-6 text-primary-foreground" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-foreground">Shiqi AI Kit</h1>
+                <h1 className="text-3xl font-bold text-foreground">{appName}</h1>
                 <p className="text-muted-foreground">Powerful AI tools for enhanced productivity</p>
               </div>
             </div>
@@ -225,6 +228,8 @@ export default function HomePage() {
           </div>
         </section>
       </main>
+
+      <Footer variant="full" />
     </div>
   );
 }

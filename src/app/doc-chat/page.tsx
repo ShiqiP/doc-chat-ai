@@ -1,11 +1,12 @@
 'use client'
 import { useState } from "react";
 import Link from "next/link";
-import { Brain, Sparkles, ArrowLeft, FileText } from "lucide-react";
+import { Sparkles, ArrowLeft, FileText } from "lucide-react";
 import { UploadArea } from "@/components/UploadArea";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ResizablePanelGroup, ResizablePanel, ResizableHandle } from "@/components/ui/resizable";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { Footer } from "@/components/Footer";
 
 const Index = () => {
   const [documentContent, setDocumentContent] = useState<string>("");
@@ -48,10 +49,6 @@ const Index = () => {
               <h1 className="text-lg font-semibold text-foreground">DocChat AI</h1>
               <p className="text-xs text-muted-foreground">AI-powered document analysis</p>
             </div>
-          </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <Sparkles className="w-3 h-3" />
-            <span>Author Shiqi</span>
           </div>
         </div>
       </header>
@@ -102,6 +99,8 @@ const Index = () => {
           </ResizablePanelGroup>
         )}
       </div>
+
+      {/* <Footer variant="compact" currentPage="DocChat AI" /> */}
     </div>
   );
 };
